@@ -24,10 +24,11 @@ type dnsLine struct {
 }
 
 type DNSMapper struct {
-	lock   sync.RWMutex
-	dnsmap map[string]dnsLine
-	fname  string
-	sleep  time.Duration
+	lock        sync.RWMutex
+	dnsmap      map[string]dnsLine
+	fname       string
+	sleep       time.Duration
+	needToWrite bool
 }
 
 func parseDNS(line []string) dnsLine {
@@ -102,6 +103,7 @@ func (d *DNSMapper) Lookup(ip net.IP) string { // either is successful or return
 			day:      time.Now(),
 		}
 		d.dnsmap[str] = dns
+		d.needToWrite = true
 		log.Printf("Lookup for %s found %s", dns.ip, dns.hostname)
 		d.sleep = minSleepTime
 		return dns.hostname
@@ -146,6 +148,10 @@ func New(dnsFile string) (*DNSMapper, error) {
 func (d *DNSMapper) Close() error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
+	if !d.needToWrite {
+		// nothing to write out, all done!
+		return nil
+	}
 	dnsSlice := make(DNSSlice, 0, len(d.dnsmap))
 	for _, dtmp := range d.dnsmap {
 		dnsSlice = append(dnsSlice, dtmp)
