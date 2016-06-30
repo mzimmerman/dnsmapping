@@ -67,6 +67,9 @@ var maxSleepTime = time.Second * 30
 
 func (d *DNSMapper) Lookup(ip net.IP) string { // either is successful or returns ip.String()
 	str := ip.String()
+	if ip.To4() == nil { // ipv6 address, skip them for now
+		return ip.String()
+	}
 	d.lock.RLock()
 	dns, ok := d.dnsmap[str]
 	d.lock.RUnlock()
