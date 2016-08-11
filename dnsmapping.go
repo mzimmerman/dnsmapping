@@ -66,6 +66,9 @@ var minSleepTime = time.Millisecond * 100
 var maxSleepTime = time.Second * 30
 
 func (d *DNSMapper) Lookup(ip net.IP) string { // either is successful or returns ip.String()
+	if ip == nil {
+		return ""
+	}
 	str := ip.String()
 	if ip.To4() == nil { // ipv6 address, skip them for now
 		return ip.String()
