@@ -87,14 +87,19 @@ func (d *DNSMapper) Lookup(ip net.IP) string { // either is successful or return
 			log.Printf("Error looking up address - %s - %v", str, err)
 			if strings.HasSuffix(err.Error(), "no such host") ||
 				strings.HasSuffix(err.Error(), "server misbehaving") ||
-				strings.HasSuffix(err.Error(), "Name or service not known") {
+				strings.HasSuffix(err.Error(), "Name or service not known") ||
+				strings.HasSuffix(err.Error(), "Temporary failure in name resolution") {
 				names = append(names, str)
 			} else {
 				d.sleep *= 2
 				if d.sleep > maxSleepTime {
 					d.sleep = maxSleepTime
 				}
-				return str // timed out, don't write anything
+				if strings.HasSuffix(err.Error(), "i/o timeout") {
+					names = append(names, str)
+				} else {
+					return str // other error, don't write anything
+				}
 			}
 		}
 		if len(names) == 0 {
